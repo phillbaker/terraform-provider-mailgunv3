@@ -50,8 +50,10 @@ func resourceMailgunDomain() *schema.Resource {
       },
 
       "receiving_records": &schema.Schema{
+        Description: "A read-only list of records that must be created to activate receiving on this domain",
         Type:     schema.TypeList,
         Computed: true,
+
         Elem: &schema.Resource{
           Schema: map[string]*schema.Schema{
             "priority": &schema.Schema{
@@ -75,8 +77,10 @@ func resourceMailgunDomain() *schema.Resource {
       },
 
       "sending_records": &schema.Schema{
+        Description: "A read-only list of records that must be created to activate receiving on this domain",
         Type:     schema.TypeList,
         Computed: true,
+
         Elem: &schema.Resource{
           Schema: map[string]*schema.Schema{
             "name": &schema.Schema{
@@ -180,8 +184,26 @@ func resourceMailgunDomainRetrieve(id string, client *mailgun.Mailgun, d *schema
   d.Set("smtp_login", domain.SMTPLogin)
   d.Set("wildcard", domain.Wildcard)
   d.Set("spam_action", domain.SpamAction)
-  d.Set("receiving_records", receivingRecords)
-  d.Set("sending_records", sendingRecords)
+  // convert mailgun objects to simple objects
+  simpleReceivingRecords := make([]map[string]interface{}, len(receivingRecords))
+  for i, r := range receivingRecords {
+    simpleReceivingRecords[i] = make(map[string]interface{})
+    simpleReceivingRecords[i]["priority"] = r.Priority
+    simpleReceivingRecords[i]["valid"] = r.Valid
+    simpleReceivingRecords[i]["value"] = r.Value
+    simpleReceivingRecords[i]["record_type"] = r.RecordType
+  }
+  d.Set("receiving_records", simpleReceivingRecords)
+
+  simpleSendingRecords := make([]map[string]interface{}, len(sendingRecords))
+  for i, r := range sendingRecords {
+    simpleSendingRecords[i] = make(map[string]interface{})
+    simpleSendingRecords[i]["name"] = r.Name
+    simpleSendingRecords[i]["valid"] = r.Valid
+    simpleSendingRecords[i]["value"] = r.Value
+    simpleSendingRecords[i]["record_type"] = r.RecordType
+  }
+  d.Set("sending_records", simpleSendingRecords)
 
   return &domain, nil
 }
