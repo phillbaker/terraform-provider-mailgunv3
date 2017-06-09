@@ -93,7 +93,14 @@ func resourceMailgunRouteUpdate(d *schema.ResourceData, meta interface{}) error 
   opts.Priority = d.Get("priority").(int)
   opts.Description = d.Get("description").(string)
   opts.Expression = d.Get("expression").(string)
-  opts.Actions = d.Get("actions").([]string)
+  actions := d.Get("actions").([]interface{})
+  actionArray := []string{}
+
+  for _, i := range actions {
+     action := i.(string)
+     actionArray = append(actionArray, action)
+  }
+  opts.Actions = actionArray
 
   log.Printf("[DEBUG] Route update configuration: %v", opts)
 
