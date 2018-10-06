@@ -43,11 +43,14 @@ resource "mailgunv3_route" "default" {
 
 ## Development
 
+Install [Glide](https://github.com/Masterminds/glide), then:
+
 ```
-go get github.com/phillbaker/terraform-provider-mailgunv3
-go get github.com/mailgun/mailgun-go
-cd $GOPATH/src/github.com/phillbaker/terraform-provider-mailgunv3
-go build -o /path/to/binary/terraform-provider-mailgunv3
+# Ensure that this folder is at the following location: `${GOPATH}/src/github.com/phillbaker/terraform-provider-elasticsearch`
+cd $GOPATH/src/github.com/phillbaker/terraform-provider-elasticsearch
+
+glide install
+go build -o /path/to/binary/terraform-provider-elasticsearch
 ```
 
 ## Licence

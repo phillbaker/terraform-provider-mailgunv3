@@ -1,0 +1,31 @@
+language: go
+go:
+  - '1.9'
+  - '1.10'
+  - master
+matrix:
+  allow_failures:
+    - go: master
+install:
+  - export TF_LOG=INFO
+  - go get -v github.com/Masterminds/glide
+  - cd $GOPATH/src/github.com/Masterminds/glide && git checkout v0.13.1 && go install && cd -
+  - glide install
+script:
+  - go build -v
+  - TF_ACC=1 go test -v -cover
+before_deploy: |
+  # rename to match terraform provider conventions:
+  #  https://www.terraform.io/docs/configuration/providers.html#third-party-plugins
+  mv terraform-provider-mailgunv3 "terraform-provider-mailgunv3_${TRAVIS_TAG}"
+deploy:
+  provider: releases
+  api_key:
+    secure: d9fT2OnndyLNQ8AbE6k0yJzvOt9K7EDZc3hk0cbhpiZeLbnsaMZQMAD/lBMO2ZbRKdPVuG3JiUwS6GJXxNKm4owRM/cgizSsl0vAxmk++4yHAs1xw4NOZoScQym8zjxv25YZ0h5dADDueov27BZuJP586+J6ppH9r8Yzkbtfx1ZtDpXdn8AhQBYvfWu+RNiLc6iT3eLyjTGWwsbgM83AjQs21Sa+XktBCS+zOr9gu9zb27NYEg4COsqUO6iei6l3NCjmNqz5qCWYR85nveIF4vZWe63F+tyfXRvRwAFx/Kd3VNFf7WA6kZPQN+9eMaqFERRvXF7g/3TCVkPjqYrVoIuFpQFrVbtl/gtVJxRWX/Nhxa4/96VuyQiq4INiCGv2wfbOXsnaBYIf0Tcp25BVttBoy3Tfq1fmqtOFtVJ8VnB+pM5bXPFYDpbN4YMvbbQX9kXQ5h+/RtD0Gf9sWm5vrh+GeF8tTd9dqx3YV5fudcWnJUJDyvRlCwJamnO5eE5UqbH216celtSvDpj4B3TlxvhjjDMmdQywXqMm4YsvMAd//bD0c5GaUToXtl4k+VwQ3cPVOpPZSS3hdtrCZHb9ghA5Zs8kLmdOhQ2M4WUUb2/SpKfAbCsXhZCtHWtVOxwnhBUXbVpIhpJjdUF3+9ZbdZNec3q5yy2taqAMAQ6UGKc=
+  file: terraform-provider-mailgunv3*
+  skip_cleanup: true
+  file_glob: true
+  on:
+    tags: true
+    branch: master
+    go: '1.10'
