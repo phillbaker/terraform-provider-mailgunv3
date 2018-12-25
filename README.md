@@ -15,7 +15,9 @@ providers {
 }
 ```
 
-See [the docs for more information](https://www.terraform.io/docs/plugins/basics.html).
+You can also place the binary inside the plugin folder, which varies based on your operating system. Refer to the [third-party providers documentation](https://www.terraform.io/docs/configuration/providers.html#third-party-plugins) for more information.
+
+For general use, see [the docs for more information](https://www.terraform.io/docs/plugins/basics.html).
 
 ## Usage
 
@@ -46,11 +48,11 @@ resource "mailgunv3_route" "default" {
 Install [Glide](https://github.com/Masterminds/glide), then:
 
 ```
-# Ensure that this folder is at the following location: `${GOPATH}/src/github.com/phillbaker/terraform-provider-elasticsearch`
-cd $GOPATH/src/github.com/phillbaker/terraform-provider-elasticsearch
+# Ensure that this folder is at the following location: `${GOPATH}/src/github.com/phillbaker/terraform-provider-mailgunv3`
+cd $GOPATH/src/github.com/phillbaker/terraform-provider-mailgunv3
 
 glide install
-go build -o /path/to/binary/terraform-provider-elasticsearch
+go build -o /path/to/binary/terraform-provider-mailgunv3
 ```
 
 ## Licence
