@@ -32,8 +32,8 @@ func resourceMailgunDomain() *schema.Resource {
 
       "smtp_password": &schema.Schema{
         Type:     schema.TypeString,
-        ForceNew: true,
-        Required: true,
+        Computed: true,
+        Optional: true,
       },
 
       "smtp_login": &schema.Schema{
