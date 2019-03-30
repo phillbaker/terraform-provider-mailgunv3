@@ -7,7 +7,8 @@ import (
 )
 
 type Config struct {
-	APIKey string
+	APIKey  string
+	BaseUrl string
 }
 
 // Client() returns a new client for accessing mailgun.
@@ -15,6 +16,10 @@ type Config struct {
 func (c *Config) Client() *mailgun.MailgunImpl {
 	domain := "" // We don't set a domain right away
 	client := mailgun.NewMailgun(domain, c.APIKey)
+
+	if c.BaseUrl != "" {
+		client.SetAPIBase(c.BaseUrl)
+	}
 
 	log.Printf("[INFO] Mailgun Client configured ")
 
