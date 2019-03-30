@@ -1,16 +1,14 @@
 language: go
 go:
-  - '1.9'
-  - '1.10'
+  - '1.11'
+  - '1.12'
   - master
 matrix:
   allow_failures:
     - go: master
 install:
   - export TF_LOG=INFO
-  - go get -v github.com/Masterminds/glide
-  - cd $GOPATH/src/github.com/Masterminds/glide && git checkout v0.13.1 && go install && cd -
-  - glide install
+  - go get
 script:
   - go build -v
   - TF_ACC=1 go test -v -cover
@@ -28,4 +26,4 @@ deploy:
   on:
     tags: true
     branch: master
-    go: '1.10'
+    go: '1.12'

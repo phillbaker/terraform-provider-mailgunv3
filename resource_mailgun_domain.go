@@ -1,13 +1,14 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
-	mailgun "github.com/mailgun/mailgun-go"
+	mailgun "github.com/mailgun/mailgun-go/v3"
 )
 
 func resourceMailgunDomain() *schema.Resource {
@@ -107,7 +108,7 @@ func resourceMailgunDomain() *schema.Resource {
 }
 
 func resourceMailgunDomainCreate(d *schema.ResourceData, meta interface{}) error {
-	client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
 	name := d.Get("name").(string)
 	smtpPassword := d.Get("smtp_password").(string)
@@ -116,7 +117,12 @@ func resourceMailgunDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	log.Printf("[DEBUG] Domain create configuration: %s, %s, %s, %v", name, smtpPassword, spamAction, wildcard)
 
-	err := client.CreateDomain(name, smtpPassword, spamAction, wildcard)
+	ctx := context.Background()
+
+	_, err := client.CreateDomain(ctx, name, smtpPassword, &mailgun.CreateDomainOptions{
+		SpamAction: mailgun.SpamAction(spamAction),
+		Wildcard:   wildcard,
+	})
 
 	if err != nil {
 		return err
@@ -137,19 +143,23 @@ func resourceMailgunDomainCreate(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceMailgunDomainDelete(d *schema.ResourceData, meta interface{}) error {
-	client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
 	log.Printf("[INFO] Deleting Domain: %s", d.Id())
 
+	ctx := context.Background()
+
 	// Destroy the domain
-	err := client.DeleteDomain(d.Id())
+	err := client.DeleteDomain(ctx, d.Id())
 	if err != nil {
 		return fmt.Errorf("Error deleting domain: %s", err)
 	}
 
 	// Give the destroy a chance to take effect
 	return resource.Retry(1*time.Minute, func() *resource.RetryError {
-		_, _, _, err = client.GetSingleDomain(d.Id())
+		ctx := context.Background()
+
+		_, err = client.GetDomain(ctx, d.Id())
 		if err == nil {
 			log.Printf("[INFO] Retrying until domain disappears...")
 			return resource.RetryableError(
@@ -161,7 +171,7 @@ func resourceMailgunDomainDelete(d *schema.ResourceData, meta interface{}) error
 }
 
 func resourceMailgunDomainRead(d *schema.ResourceData, meta interface{}) error {
-	client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
 	_, err := resourceMailgunDomainRetrieve(d.Id(), &client, d)
 
@@ -172,21 +182,23 @@ func resourceMailgunDomainRead(d *schema.ResourceData, meta interface{}) error {
 	return nil
 }
 
-func resourceMailgunDomainRetrieve(id string, client *mailgun.Mailgun, d *schema.ResourceData) (*mailgun.Domain, error) {
-	domain, receivingRecords, sendingRecords, err := (*client).GetSingleDomain(id)
+func resourceMailgunDomainRetrieve(id string, client *mailgun.MailgunImpl, d *schema.ResourceData) (*mailgun.Domain, error) {
+	ctx := context.Background()
+
+	domain, err := (*client).GetDomain(ctx, id)
 
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving domain: %s", err)
 	}
 
-	d.Set("name", domain.Name)
-	d.Set("smtp_password", domain.SMTPPassword)
-	d.Set("smtp_login", domain.SMTPLogin)
-	d.Set("wildcard", domain.Wildcard)
-	d.Set("spam_action", domain.SpamAction)
+	d.Set("name", domain.Domain.Name)
+	d.Set("smtp_password", domain.Domain.SMTPPassword)
+	d.Set("smtp_login", domain.Domain.SMTPLogin)
+	d.Set("wildcard", domain.Domain.Wildcard)
+	d.Set("spam_action", domain.Domain.SpamAction)
 	// convert mailgun objects to simple objects
-	simpleReceivingRecords := make([]map[string]interface{}, len(receivingRecords))
-	for i, r := range receivingRecords {
+	simpleReceivingRecords := make([]map[string]interface{}, len(domain.ReceivingDNSRecords))
+	for i, r := range domain.ReceivingDNSRecords {
 		simpleReceivingRecords[i] = make(map[string]interface{})
 		simpleReceivingRecords[i]["priority"] = r.Priority
 		simpleReceivingRecords[i]["valid"] = r.Valid
@@ -195,8 +207,8 @@ func resourceMailgunDomainRetrieve(id string, client *mailgun.Mailgun, d *schema
 	}
 	d.Set("receiving_records", simpleReceivingRecords)
 
-	simpleSendingRecords := make([]map[string]interface{}, len(sendingRecords))
-	for i, r := range sendingRecords {
+	simpleSendingRecords := make([]map[string]interface{}, len(domain.SendingDNSRecords))
+	for i, r := range domain.SendingDNSRecords {
 		simpleSendingRecords[i] = make(map[string]interface{})
 		simpleSendingRecords[i]["name"] = r.Name
 		simpleSendingRecords[i]["valid"] = r.Valid
@@ -205,5 +217,5 @@ func resourceMailgunDomainRetrieve(id string, client *mailgun.Mailgun, d *schema
 	}
 	d.Set("sending_records", simpleSendingRecords)
 
-	return &domain, nil
+	return &domain.Domain, nil
 }

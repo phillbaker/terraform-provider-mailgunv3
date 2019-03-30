@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	mailgun "github.com/mailgun/mailgun-go"
+	mailgun "github.com/mailgun/mailgun-go/v3"
 )
 
 type Config struct {
@@ -12,12 +12,11 @@ type Config struct {
 
 // Client() returns a new client for accessing mailgun.
 //
-func (c *Config) Client() *mailgun.Mailgun {
-	domain := ""       // We don't set a domain right away
-	publicApiKey := "" // We don't support email validation
-	client := mailgun.NewMailgun(domain, c.APIKey, publicApiKey)
+func (c *Config) Client() *mailgun.MailgunImpl {
+	domain := "" // We don't set a domain right away
+	client := mailgun.NewMailgun(domain, c.APIKey)
 
 	log.Printf("[INFO] Mailgun Client configured ")
 
-	return &client
+	return client
 }
