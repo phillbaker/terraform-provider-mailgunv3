@@ -32,9 +32,10 @@ func resourceMailgunDomain() *schema.Resource {
 			},
 
 			"smtp_password": {
-				Type:     schema.TypeString,
-				ForceNew: true,
-				Required: true,
+				Type:      schema.TypeString,
+				ForceNew:  true,
+				Required:  true,
+				Sensitive: true,
 			},
 
 			"smtp_login": {
