@@ -1,177 +1,186 @@
 package main
 
 import (
-  "fmt"
-  "log"
-  "time"
+	"context"
+	"fmt"
+	"log"
+	"time"
 
-  "github.com/hashicorp/terraform/helper/resource"
-  "github.com/hashicorp/terraform/helper/schema"
-  mailgun "github.com/mailgun/mailgun-go"
+	"github.com/hashicorp/terraform/helper/resource"
+	"github.com/hashicorp/terraform/helper/schema"
+	mailgun "github.com/mailgun/mailgun-go/v3"
 )
 
 func resourceMailgunRoute() *schema.Resource {
-  return &schema.Resource{
-    Create: resourceMailgunRouteCreate,
-    Read:   resourceMailgunRouteRead,
-    Update:   resourceMailgunRouteUpdate,
-    Delete: resourceMailgunRouteDelete,
+	return &schema.Resource{
+		Create: resourceMailgunRouteCreate,
+		Read:   resourceMailgunRouteRead,
+		Update: resourceMailgunRouteUpdate,
+		Delete: resourceMailgunRouteDelete,
 
-    Schema: map[string]*schema.Schema{
-      "priority": &schema.Schema{
-        Type:     schema.TypeInt,
-        Required: true,
-        ForceNew: false,
-      },
+		Schema: map[string]*schema.Schema{
+			"priority": {
+				Type:     schema.TypeInt,
+				Required: true,
+				ForceNew: false,
+			},
 
-      "description": &schema.Schema{
-        Type:     schema.TypeString,
-        Optional: true,
-        ForceNew: false,
-      },
+			"description": {
+				Type:     schema.TypeString,
+				Optional: true,
+				ForceNew: false,
+			},
 
-      "expression": &schema.Schema{
-        Type:     schema.TypeString,
-        Required: true,
-        ForceNew: false,
-      },
+			"expression": {
+				Type:     schema.TypeString,
+				Required: true,
+				ForceNew: false,
+			},
 
-      "actions": &schema.Schema{
-        Type:     schema.TypeList,
-        Required: true,
-        Elem:     &schema.Schema{Type: schema.TypeString},
-      },
-    },
-  }
+			"actions": {
+				Type:     schema.TypeList,
+				Required: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
+			},
+		},
+	}
 }
 
 func resourceMailgunRouteCreate(d *schema.ResourceData, meta interface{}) error {
-  client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
-  opts := mailgun.Route{}
+	opts := mailgun.Route{}
 
-  opts.Priority = d.Get("priority").(int)
-  opts.Description = d.Get("description").(string)
-  opts.Expression = d.Get("expression").(string)
-  actions := d.Get("actions").([]interface{})
-  actionArray := []string{}
+	opts.Priority = d.Get("priority").(int)
+	opts.Description = d.Get("description").(string)
+	opts.Expression = d.Get("expression").(string)
+	actions := d.Get("actions").([]interface{})
+	actionArray := []string{}
 
-  for _, i := range actions {
-     action := i.(string)
-     actionArray = append(actionArray, action)
-  }
+	for _, i := range actions {
+		action := i.(string)
+		actionArray = append(actionArray, action)
+	}
 
-  opts.Actions = actionArray
-  log.Printf("[DEBUG] Route create configuration: %v", opts)
+	opts.Actions = actionArray
+	log.Printf("[DEBUG] Route create configuration: %v", opts)
 
+	ctx := context.Background()
 
-  route, err := client.CreateRoute(opts)
+	route, err := client.CreateRoute(ctx, opts)
 
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  d.SetId(route.ID)
+	d.SetId(route.Id)
 
-  log.Printf("[INFO] Route ID: %s", d.Id())
+	log.Printf("[INFO] Route ID: %s", d.Id())
 
-  // Retrieve and update state of route
-  _, err = resourceMailgunRouteRetrieve(d.Id(), &client, d)
+	// Retrieve and update state of route
+	_, err = resourceMailgunRouteRetrieve(d.Id(), &client, d)
 
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func resourceMailgunRouteUpdate(d *schema.ResourceData, meta interface{}) error {
-  client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
-  opts := mailgun.Route{}
+	opts := mailgun.Route{}
 
-  opts.Priority = d.Get("priority").(int)
-  opts.Description = d.Get("description").(string)
-  opts.Expression = d.Get("expression").(string)
-  actions := d.Get("actions").([]interface{})
-  actionArray := []string{}
+	opts.Priority = d.Get("priority").(int)
+	opts.Description = d.Get("description").(string)
+	opts.Expression = d.Get("expression").(string)
+	actions := d.Get("actions").([]interface{})
+	actionArray := []string{}
 
-  for _, i := range actions {
-     action := i.(string)
-     actionArray = append(actionArray, action)
-  }
-  opts.Actions = actionArray
+	for _, i := range actions {
+		action := i.(string)
+		actionArray = append(actionArray, action)
+	}
+	opts.Actions = actionArray
 
-  log.Printf("[DEBUG] Route update configuration: %v", opts)
+	log.Printf("[DEBUG] Route update configuration: %v", opts)
 
+	ctx := context.Background()
 
-  route, err := client.UpdateRoute(d.Id(), opts)
+	route, err := client.UpdateRoute(ctx, d.Id(), opts)
 
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  d.SetId(route.ID)
+	d.SetId(route.Id)
 
-  log.Printf("[INFO] Route ID: %s", d.Id())
+	log.Printf("[INFO] Route ID: %s", d.Id())
 
-  // Retrieve and update state of route
-  _, err = resourceMailgunRouteRetrieve(d.Id(), &client, d)
+	// Retrieve and update state of route
+	_, err = resourceMailgunRouteRetrieve(d.Id(), &client, d)
 
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
 func resourceMailgunRouteDelete(d *schema.ResourceData, meta interface{}) error {
-  client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
-  log.Printf("[INFO] Deleting Route: %s", d.Id())
+	log.Printf("[INFO] Deleting Route: %s", d.Id())
 
-  // Destroy the route
-  err := client.DeleteRoute(d.Id())
-  if err != nil {
-    return fmt.Errorf("Error deleting route: %s", err)
-  }
+	ctx := context.Background()
 
-  // Give the destroy a chance to take effect
-  return resource.Retry(1*time.Minute, func() *resource.RetryError {
-    _, err = client.GetRouteByID(d.Id())
-    if err == nil {
-      log.Printf("[INFO] Retrying until route disappears...")
-      return resource.RetryableError(
-        fmt.Errorf("Route seems to still exist; will check again."))
-    }
-    log.Printf("[INFO] Got error looking for route, seems gone: %s", err)
-    return nil
-  })
+	// Destroy the route
+	err := client.DeleteRoute(ctx, d.Id())
+	if err != nil {
+		return fmt.Errorf("Error deleting route: %s", err)
+	}
+
+	// Give the destroy a chance to take effect
+	return resource.Retry(1*time.Minute, func() *resource.RetryError {
+		ctx := context.Background()
+
+		_, err = client.GetRoute(ctx, d.Id())
+		if err == nil {
+			log.Printf("[INFO] Retrying until route disappears...")
+			return resource.RetryableError(
+				fmt.Errorf("Route seems to still exist; will check again."))
+		}
+		log.Printf("[INFO] Got error looking for route, seems gone: %s", err)
+		return nil
+	})
 }
 
 func resourceMailgunRouteRead(d *schema.ResourceData, meta interface{}) error {
-  client := *meta.(*mailgun.Mailgun)
+	client := *meta.(*mailgun.MailgunImpl)
 
-  _, err := resourceMailgunRouteRetrieve(d.Id(), &client, d)
+	_, err := resourceMailgunRouteRetrieve(d.Id(), &client, d)
 
-  if err != nil {
-    return err
-  }
+	if err != nil {
+		return err
+	}
 
-  return nil
+	return nil
 }
 
-func resourceMailgunRouteRetrieve(id string, client *mailgun.Mailgun, d *schema.ResourceData) (*mailgun.Route, error) {
-  route, err := (*client).GetRouteByID(id)
+func resourceMailgunRouteRetrieve(id string, client *mailgun.MailgunImpl, d *schema.ResourceData) (*mailgun.Route, error) {
+	ctx := context.Background()
 
-  if err != nil {
-    return nil, fmt.Errorf("Error retrieving route: %s", err)
-  }
+	route, err := (*client).GetRoute(ctx, id)
 
-  d.Set("priority", route.Priority)
-  d.Set("description", route.Description)
-  d.Set("expression", route.Expression)
-  d.Set("actions", route.Actions)
+	if err != nil {
+		return nil, fmt.Errorf("Error retrieving route: %s", err)
+	}
 
-  return &route, nil
+	d.Set("priority", route.Priority)
+	d.Set("description", route.Description)
+	d.Set("expression", route.Expression)
+	d.Set("actions", route.Actions)
+
+	return &route, nil
 }

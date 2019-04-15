@@ -1,9 +1,0 @@
-package: github.com/phillbaker/terraform-provider-elasticsearch
-import:
-- package: github.com/mailgun/mailgun-go
-  version: v1.1.0
-- package: github.com/hashicorp/terraform
-  version: v0.11.6
-  subpackages:
-  - helper/schema
-  - terraform
