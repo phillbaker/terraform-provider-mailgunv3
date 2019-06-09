@@ -120,8 +120,9 @@ func resourceMailgunDomainCreate(d *schema.ResourceData, meta interface{}) error
 
 	ctx := context.Background()
 
-	_, err := client.CreateDomain(ctx, name, smtpPassword, &mailgun.CreateDomainOptions{
+	_, err := client.CreateDomain(ctx, name, &mailgun.CreateDomainOptions{
 		SpamAction: mailgun.SpamAction(spamAction),
+		Password:   smtpPassword,
 		Wildcard:   wildcard,
 	})
 
