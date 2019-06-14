@@ -1,6 +1,5 @@
 language: go
 go:
-  - '1.11'
   - '1.12'
   - master
 matrix:
@@ -12,10 +11,16 @@ install:
 script:
   - go build -v
   - TF_ACC=1 go test -v -cover
-before_deploy: |
+before_deploy:
+  - export GO111MODULE=on
+  - go get github.com/mitchellh/gox
+  - export TARGET_OS="freebsd darwin linux windows"
+  - export TARGET_ARCH="386 amd64"
   # rename to match terraform provider conventions:
   #  https://www.terraform.io/docs/configuration/providers.html#third-party-plugins
-  mv terraform-provider-mailgunv3 "terraform-provider-mailgunv3_${TRAVIS_TAG}"
+  - export FILE_NAME="terraform-provider-mailgunv3_${TRAVIS_TAG}_{{.OS}}_{{.Arch}}"
+  - gox -os "$TARGET_OS" -arch "$TARGET_ARCH" -output="$FILE_NAME"
+  - CGO_ENABLED=0 gox -os "$TARGET_OS" -arch "$TARGET_ARCH" -output="${FILE_NAME}_static"
 deploy:
   provider: releases
   api_key:
