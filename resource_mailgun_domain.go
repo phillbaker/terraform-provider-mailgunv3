@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v3"
 	"github.com/hashicorp/terraform/helper/resource"
 	"github.com/hashicorp/terraform/helper/schema"
 	mailgun "github.com/mailgun/mailgun-go/v3"
@@ -187,8 +189,22 @@ func resourceMailgunDomainRead(d *schema.ResourceData, meta interface{}) error {
 func resourceMailgunDomainRetrieve(id string, client *mailgun.MailgunImpl, d *schema.ResourceData) (*mailgun.Domain, error) {
 	ctx := context.Background()
 
-	domain, err := (*client).GetDomain(ctx, id)
+	var domain mailgun.DomainResponse
+	operation := func() error {
+		var err error
+		domain, err = (*client).GetDomain(ctx, id)
 
+		// only backoff on 429s
+		if err, ok := err.(*mailgun.UnexpectedResponseError); ok && err.Actual == http.StatusTooManyRequests {
+			return err
+		} else if err != nil {
+			return &backoff.PermanentError{Err: err}
+		} else {
+			return nil
+		}
+	}
+
+	err := backoff.Retry(operation, backoff.NewExponentialBackOff())
 	if err != nil {
 		return nil, fmt.Errorf("Error retrieving domain: %s", err)
 	}
