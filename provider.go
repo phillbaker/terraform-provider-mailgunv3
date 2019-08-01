@@ -12,8 +12,8 @@ func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"api_key": &schema.Schema{
-				Type:        schema.TypeString,
-				Required:    true,
+				Type:     schema.TypeString,
+				Required: true,
 				DefaultFunc: schema.EnvDefaultFunc("MAILGUN_API_KEY", nil),
 			},
 			"base_url": {
