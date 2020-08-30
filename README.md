@@ -1,5 +1,9 @@
 # terraform-provider-mailgunv3
 
+The original provider at https://www.terraform.io/docs/providers/mailgun/ has been upgraded to use the v3 API. Please migrate to that provider, this project is archived. Please see [#19](https://github.com/phillbaker/terraform-provider-mailgunv3/issues/19) for details.
+
+----
+
 [![Build Status](https://travis-ci.org/phillbaker/terraform-provider-mailgunv3.svg?branch=master)](https://travis-ci.org/phillbaker/terraform-provider-mailgunv3)
 
 This is a terraform provider that lets you provision
